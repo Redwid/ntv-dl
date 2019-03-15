@@ -10,6 +10,7 @@ NTV_PEREDELKA_JSON_URL = 'http://www.ntv.ru/m/v10/prog/peredelka/'
 NTV_DACHA_OTVET_JSON_URL = 'http://www.ntv.ru/m/v10/prog/dacha_otvet/'
 NTV_CLIENT_USER_AGENT = 'ru.ntv.client_v4.9'
 HEADERS = {'User-Agent': NTV_CLIENT_USER_AGENT}
+DOWNLOD_FOLDER = '/srv/dev-disk-by-label-media/downloads'
 
 @dataclass
 class VideoItem(object):
@@ -73,5 +74,5 @@ if __name__ == '__main__':
         print('Url to download:', url)
         if url is not None:
             print('Url start download:', url)
-            subprocess.run(['wget', '-N', '-U', NTV_CLIENT_USER_AGENT, '-O', videoItem.title + '.mp4', url])
+            subprocess.run(['wget', '-P', DOWNLOD_FOLDER, '-N', '-U', NTV_CLIENT_USER_AGENT, '-O', videoItem.title + '.mp4', url])
 
