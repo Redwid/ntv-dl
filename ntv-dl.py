@@ -7,6 +7,8 @@ from operator import attrgetter
 NTV_EDA_JIVAYA_I_MERTVAYA_JSON_URL = 'http://www.ntv.ru/m/v10/prog/Eda_jivaya_i_mertvaya/'
 NTV_PEREDELKA_JSON_URL = 'http://www.ntv.ru/m/v10/prog/peredelka/'
 NTV_DACHA_OTVET_JSON_URL = 'http://www.ntv.ru/m/v10/prog/dacha_otvet/'
+NTV_CHUDO_TEHNILI_URL = 'http://www.ntv.ru/m/v10/prog/chudo_tehniki/'
+
 NTV_CLIENT_USER_AGENT = 'ru.ntv.client_v4.9'
 HEADERS = {'User-Agent': NTV_CLIENT_USER_AGENT}
 DOWNLOD_FOLDER = '/srv/dev-disk-by-label-media/downloads'
@@ -59,16 +61,18 @@ def getVideoUrl(videoItem):
 
 if __name__ == '__main__':
     print('main')
-    urls = [NTV_EDA_JIVAYA_I_MERTVAYA_JSON_URL, NTV_PEREDELKA_JSON_URL, NTV_DACHA_OTVET_JSON_URL]
+    urls = [NTV_EDA_JIVAYA_I_MERTVAYA_JSON_URL, NTV_PEREDELKA_JSON_URL,
+            NTV_DACHA_OTVET_JSON_URL, NTV_CHUDO_TEHNILI_URL]
     for url in urls:
         print('url: ', url)
         videoItemList = downloadJson(url)
         #videoItemList.sort(key = attrgetter('ms'), reverse = False)
-        videoItem = videoItemList[-1]
+        videoItem = videoItemList[0]
         print('To download:', videoItem)
         url = getVideoUrl(videoItem)
         print('Url to download:', url)
         if url is not None:
             print('Url start download:', url)
-            subprocess.run(['echo', '-P', DOWNLOD_FOLDER, '-N', '-U', NTV_CLIENT_USER_AGENT, '-O', videoItem['title'] + '.mp4', url])
+            #subprocess.run(['wget', '-P', DOWNLOD_FOLDER, '-N', '-U', NTV_CLIENT_USER_AGENT, '-O', videoItem['title'] + '.mp4', url])
+            subprocess.run(['echo', '-P', DOWNLOD_FOLDER, '-N', '-U', NTV_CLIENT_USER_AGENT, url])
 
