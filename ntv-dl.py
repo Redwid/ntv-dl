@@ -3,6 +3,7 @@ import requests
 import subprocess
 from datetime import datetime
 from operator import attrgetter
+#import sqlite3
 
 NTV_EDA_JIVAYA_I_MERTVAYA_JSON_URL = 'http://www.ntv.ru/m/v10/prog/Eda_jivaya_i_mertvaya/'
 NTV_PEREDELKA_JSON_URL = 'http://www.ntv.ru/m/v10/prog/peredelka/'
@@ -59,10 +60,20 @@ def getVideoUrl(videoItem):
             return url
     return None
 
+# def createDb():
+#     print('createDb()')
+#     conn = sqlite3.connect('ntv-videos.db')
+#     conn.execute('CREATE TABLE VIDEOS (id INT PRIMARY KEY NOT NULL), ms INT, title TEXT, sharelink TEXT, hi_video TEXT, lo_video TEXT')
+#     print('Table created successfully')
+#     conn.close()
+
 if __name__ == '__main__':
     print('main')
+    #createDb()
+
     urls = [NTV_EDA_JIVAYA_I_MERTVAYA_JSON_URL, NTV_PEREDELKA_JSON_URL,
             NTV_DACHA_OTVET_JSON_URL, NTV_CHUDO_TEHNILI_URL]
+
     for url in urls:
         print('url: ', url)
         videoItemList = downloadJson(url)
@@ -74,5 +85,6 @@ if __name__ == '__main__':
         if url is not None:
             print('Url start download:', url)
             #subprocess.run(['wget', '-P', DOWNLOD_FOLDER, '-N', '-U', NTV_CLIENT_USER_AGENT, '-O', videoItem['title'] + '.mp4', url])
-            subprocess.run(['wget', '-P', DOWNLOD_FOLDER, '-N', '-U', NTV_CLIENT_USER_AGENT, url])
+            #subprocess.run(['wget', '-P', DOWNLOD_FOLDER, '-N', '-U', NTV_CLIENT_USER_AGENT, url])
+            subprocess.run(['aria2c', '--auto-file-renaming=false', '--dir=' + DOWNLOD_FOLDER, '--user-agent=' + NTV_CLIENT_USER_AGENT, url])
 
