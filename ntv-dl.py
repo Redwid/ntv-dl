@@ -3,6 +3,7 @@ import requests
 import subprocess
 from datetime import datetime
 from operator import attrgetter
+from subprocess import check_output, CalledProcessError, STDOUT
 #import sqlite3
 
 NTV_EDA_JIVAYA_I_MERTVAYA_JSON_URL = 'http://www.ntv.ru/m/v10/prog/Eda_jivaya_i_mertvaya/'
@@ -50,6 +51,7 @@ def downloadJson(jsonUrl):
                 videoItemList.append(videoItem)
     return videoItemList
 
+
 def getVideoUrl(videoItem):
     urls = [videoItem['hi_video'], videoItem['lo_video']]
     for url in urls:
@@ -67,6 +69,22 @@ def getVideoUrl(videoItem):
 #     print('Table created successfully')
 #     conn.close()
 
+
+def download(url):
+    print('download(', url, ')')
+    if url is not None:
+        #subprocess.run(['wget', '-P', DOWNLOD_FOLDER, '-N', '-U', NTV_CLIENT_USER_AGENT, '-O', videoItem['title'] + '.mp4', url])
+        #subprocess.run(['wget', '-P', DOWNLOD_FOLDER, '-N', '-U', NTV_CLIENT_USER_AGENT, url])
+        command = ['aria2c', '--auto-file-renaming=false', '--dir=' + DOWNLOD_FOLDER, '--user-agent=' + NTV_CLIENT_USER_AGENT, url]
+        try:
+            output = check_output(command, stderr=STDOUT).decode()
+            return True
+        except CalledProcessError as e:
+            output = e.output.decode()
+            print('ERROR in command: ', output)
+    return False
+
+
 if __name__ == '__main__':
     print('main')
     #createDb()
@@ -81,10 +99,7 @@ if __name__ == '__main__':
         videoItem = videoItemList[0]
         print('To download:', videoItem)
         url = getVideoUrl(videoItem)
-        print('Url to download:', url)
-        if url is not None:
-            print('Url start download:', url)
-            #subprocess.run(['wget', '-P', DOWNLOD_FOLDER, '-N', '-U', NTV_CLIENT_USER_AGENT, '-O', videoItem['title'] + '.mp4', url])
-            #subprocess.run(['wget', '-P', DOWNLOD_FOLDER, '-N', '-U', NTV_CLIENT_USER_AGENT, url])
-            subprocess.run(['aria2c', '--auto-file-renaming=false', '--dir=' + DOWNLOD_FOLDER, '--user-agent=' + NTV_CLIENT_USER_AGENT, url])
-
+        if download(url):
+            print('Downloaded SUCCESS')
+        else:
+            print('Downloaded FAIL')
