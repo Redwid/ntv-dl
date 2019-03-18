@@ -71,7 +71,7 @@ def getVideoUrl(videoItem):
 
 
 def download(url, file_name):
-    print('download(', url, file_name, ')')
+    print('download(', url, ',', file_name, ')')
     if url is not None:
         #subprocess.run(['wget', '-P', DOWNLOD_FOLDER, '-N', '-U', NTV_CLIENT_USER_AGENT, '-O', videoItem['title'] + '.mp4', url])
         #subprocess.run(['wget', '-P', DOWNLOD_FOLDER, '-N', '-U', NTV_CLIENT_USER_AGENT, url])
