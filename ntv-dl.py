@@ -88,6 +88,7 @@ def download(url):
 
 
 def notify_downloaded(file_name):
+    print('notify_downloaded(', file_name, ')')
     try:
         subprocess.run('python3' '/opt/nas-scripts/notifier.py', 'Downloaded: ' + file_name, '-c' '#nas-transmission')
     except Exception as e:
@@ -101,17 +102,17 @@ if __name__ == '__main__':
     if download('http://packages.openmediavault.org/public/dists/arrakis-proposed/main/binary-amd64/Packages.gz'):
         notify_downloaded('Packages.gz')
 
-    urls = [NTV_EDA_JIVAYA_I_MERTVAYA_JSON_URL, NTV_PEREDELKA_JSON_URL,
-            NTV_DACHA_OTVET_JSON_URL, NTV_CHUDO_TEHNILI_URL]
-
-    for url in urls:
-        print('url: ', url)
-        videoItemList = downloadJson(url)
-        #videoItemList.sort(key = attrgetter('ms'), reverse = False)
-        videoItem = videoItemList[0]
-        print('To download:', videoItem)
-        url = getVideoUrl(videoItem)
-        if download(url):
-            print('Downloaded SUCCESS')
-        else:
-            print('Downloaded FAIL')
+#    urls = [NTV_EDA_JIVAYA_I_MERTVAYA_JSON_URL, NTV_PEREDELKA_JSON_URL,
+#            NTV_DACHA_OTVET_JSON_URL, NTV_CHUDO_TEHNILI_URL]
+#
+#    for url in urls:
+#        print('url: ', url)
+#        videoItemList = downloadJson(url)
+#        #videoItemList.sort(key = attrgetter('ms'), reverse = False)
+#        videoItem = videoItemList[0]
+#        print('To download:', videoItem)
+#        url = getVideoUrl(videoItem)
+#        if download(url):
+#            print('Downloaded SUCCESS')
+#        else:
+#            print('Downloaded FAIL')
