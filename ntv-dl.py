@@ -90,7 +90,7 @@ def download(url):
 def notify_downloaded(file_name):
     print('notify_downloaded(', file_name, ')')
     try:
-        subprocess.run(['python3' '/opt/nas-scripts/notifier.py', 'Downloaded: ' + file_name, '-c' '#nas-transmission'])
+        subprocess.run(['python3', '/opt/nas-scripts/notifier.py', 'Downloaded: ' + file_name, '-c' '#nas-transmission'])
     except Exception as e:
         print('ERROR in notify_downloaded: ', e)
 
