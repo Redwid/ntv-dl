@@ -70,12 +70,18 @@ def getVideoUrl(videoItem):
 #     conn.close()
 
 
-def download(url):
-    print('download(', url, ')')
+def download(url, file_name):
+    print('download(', url, file_name, ')')
     if url is not None:
         #subprocess.run(['wget', '-P', DOWNLOD_FOLDER, '-N', '-U', NTV_CLIENT_USER_AGENT, '-O', videoItem['title'] + '.mp4', url])
         #subprocess.run(['wget', '-P', DOWNLOD_FOLDER, '-N', '-U', NTV_CLIENT_USER_AGENT, url])
-        command = ['aria2c', '--auto-file-renaming=false', '--dir=' + DOWNLOAD_FOLDER, '--user-agent=' + NTV_CLIENT_USER_AGENT, '--file-allocation=none', url]
+        command = ['aria2c',
+                   '--auto-file-renaming=false',
+                   '--user-agent=' + NTV_CLIENT_USER_AGENT,
+                   '--file-allocation=none',
+                   '--dir=' + DOWNLOAD_FOLDER,
+                   '--out=' + file_name,
+                   url]
         try:
             output = subprocess.run(command)
             print('Command output: ', output.returncode)
@@ -90,7 +96,7 @@ def download(url):
 def notify_downloaded(file_name):
     print('notify_downloaded(', file_name, ')')
     try:
-        subprocess.run(['python3', '/opt/nas-scripts/notifier.py', 'Downloaded: ' + file_name, '-c' '#nas-transmission'])
+        subprocess.run(['python3', '/opt/nas-scripts/notifier.py', 'Aria2 downloaded: ' + file_name, '-c' '#nas-transmission'])
     except Exception as e:
         print('ERROR in notify_downloaded: ', e)
 
@@ -99,20 +105,21 @@ if __name__ == '__main__':
     print('main')
     #createDb()
 
-    if download('http://packages.openmediavault.org/public/dists/arrakis-proposed/main/binary-amd64/Packages.gz'):
-        notify_downloaded('Packages.gz')
+#    if download('http://packages.openmediavault.org/public/dists/arrakis-proposed/main/binary-amd64/Packages.gz', 'downloaded-packages.gz'):
+#        notify_downloaded('Packages.gz')
 
-#    urls = [NTV_EDA_JIVAYA_I_MERTVAYA_JSON_URL, NTV_PEREDELKA_JSON_URL,
-#            NTV_DACHA_OTVET_JSON_URL, NTV_CHUDO_TEHNILI_URL]
-#
-#    for url in urls:
-#        print('url: ', url)
-#        videoItemList = downloadJson(url)
-#        #videoItemList.sort(key = attrgetter('ms'), reverse = False)
-#        videoItem = videoItemList[0]
-#        print('To download:', videoItem)
-#        url = getVideoUrl(videoItem)
-#        if download(url):
-#            print('Downloaded SUCCESS')
-#        else:
-#            print('Downloaded FAIL')
+    urls = [NTV_EDA_JIVAYA_I_MERTVAYA_JSON_URL, NTV_PEREDELKA_JSON_URL,
+            NTV_DACHA_OTVET_JSON_URL, NTV_CHUDO_TEHNILI_URL]
+
+    for url in urls:
+        print('url: ', url)
+        videoItemList = downloadJson(url)
+        #videoItemList.sort(key = attrgetter('ms'), reverse = False)
+        videoItem = videoItemList[0]
+        print('To download:', videoItem)
+        url = getVideoUrl(videoItem)
+        if download(url):
+            print('Downloaded SUCCESS')
+            notify_downloaded(videoItem['title'] + '.mp4')
+        else:
+            print('Downloaded FAIL')
