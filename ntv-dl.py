@@ -118,8 +118,9 @@ if __name__ == '__main__':
         videoItem = videoItemList[0]
         print('To download:', videoItem)
         url = getVideoUrl(videoItem)
-        if download(url):
+        file_name = videoItem['title'] + '.mp4'
+        if download(url, file_name):
             print('Downloaded SUCCESS')
-            notify_downloaded(videoItem['title'] + '.mp4')
+            notify_downloaded(file_name)
         else:
             print('Downloaded FAIL')
