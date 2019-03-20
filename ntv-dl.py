@@ -56,18 +56,21 @@ def download_json(json_url):
 
 
 def get_video_url(video_item):
+    print('  get_video_url(', video_item, ')')
     urls = [video_item['hi_video'], video_item['lo_video']]
     for url in urls:
-        print('head for url: ', url)
+        print('    get_video_url(', url, ')')
         r = requests.head(url, headers = HEADERS)
-        print('r.status_code: ', r.status_code)
+        print('    get_video_url(), r.status_code: ', r.status_code)
         if r.status_code == 200:
+            print('    get_video_url() found url: ', url)
             return url
+    print('    get_video_url() ERROR no url found!')
     return None
 
 
 def download(url, file_name):
-    print('download(', url, ',', file_name, ')')
+    print('  download(', url, ',', file_name, ')')
     if url is not None:
         #subprocess.run(['wget', '-P', DOWNLOD_FOLDER, '-N', '-U', NTV_CLIENT_USER_AGENT, '-O', videoItem['title'] + '.mp4', url])
         #subprocess.run(['wget', '-P', DOWNLOD_FOLDER, '-N', '-U', NTV_CLIENT_USER_AGENT, url])
@@ -80,25 +83,25 @@ def download(url, file_name):
                    url]
         try:
             output = subprocess.run(command)
-            print('Command output: ', output.returncode)
+            print('    download(), command output: ', output.returncode)
             if output.returncode == 0:
                 return True
         except CalledProcessError as e:
             output = e.output.decode()
-            print('ERROR in command: ', output)
+            print('    ERROR in command: ', output)
     return False
 
 
 def notify_downloaded(file_name):
-    print('notify_downloaded(', file_name, ')')
+    print('  notify_downloaded(', file_name, ')')
     try:
         subprocess.run(['python3', '/opt/nas-scripts/notifier.py', 'Aria2 downloaded: ' + file_name, '-c' '#nas-transmission'])
     except Exception as e:
-        print('ERROR in notify_downloaded: ', e)
+        print('    ERROR in notify_downloaded: ', e)
 
 
 def store_downloaded(video_item):
-    print('store_downloaded(', video_item, ')')
+    print('  store_downloaded(', video_item, ')')
     with open(DOWNLOADED_TXT, 'a') as f:
         json.dump(video_item, f)
         print('', file=f)
@@ -115,20 +118,20 @@ def read_downloaded():
                 line = f.readline()
                 data_store.append(json.loads(line))
     except Exception as e:
-        print('ERROR in read_downloaded: ', e)
+        print('  ERROR in read_downloaded: ', e)
 
     return data_store
 
 def is_item_already_downloaded(video_item, data_store):
-    print('is_item_already_downloaded(', video_item, ')')
+    print('  is_item_already_downloaded(', video_item, ')')
     for item in data_store:
         id_equals = item['id'] == video_item['id']
         title_equals = item['title'] == video_item['title']
         sharelink_equals = item['sharelink'] == video_item['sharelink']
         if id_equals and title_equals and sharelink_equals:
-            print('is_item_already_downloaded() True')
+            print('    is_item_already_downloaded() True')
             return True
-    print('is_item_already_downloaded() False')
+    print('    is_item_already_downloaded() False')
     return False
 
 
@@ -146,18 +149,16 @@ if __name__ == '__main__':
     print('downloaded_video_item_list: ', downloaded_video_item_list)
 
     for url in urls:
-        print('url: ', url)
         video_item_list = download_json(url)
         #video_item_list.sort(key = attrgetter('ms'), reverse = False)
         video_item = video_item_list[0]
         if not is_item_already_downloaded(video_item, downloaded_video_item_list):
-            print('To download:', video_item)
             url = get_video_url(video_item)
             file_name = video_item['title'] + '.mp4'
 
             if download(url, file_name):
-                print('Downloaded SUCCESS')
+                print('  downloaded SUCCESS')
                 store_downloaded(video_item)
                 notify_downloaded(file_name)
             else:
-                print('Downloaded FAIL')
+                print('  downloaded FAIL')
