@@ -1,28 +1,31 @@
 #!/usr/bin/env python -*- coding: utf-8 -*-
 import requests
 import subprocess
+import json
 from datetime import datetime
 from operator import attrgetter
 from subprocess import check_output, CalledProcessError, STDOUT
-#import sqlite3
+
 
 NTV_EDA_JIVAYA_I_MERTVAYA_JSON_URL = 'http://www.ntv.ru/m/v10/prog/Eda_jivaya_i_mertvaya/'
 NTV_PEREDELKA_JSON_URL = 'http://www.ntv.ru/m/v10/prog/peredelka/'
 NTV_DACHA_OTVET_JSON_URL = 'http://www.ntv.ru/m/v10/prog/dacha_otvet/'
 NTV_CHUDO_TEHNILI_URL = 'http://www.ntv.ru/m/v10/prog/chudo_tehniki/'
+DOWNLOADED_TXT = 'downloaded.txt'
+
 
 NTV_CLIENT_USER_AGENT = 'ru.ntv.client_v4.9'
 HEADERS = {'User-Agent': NTV_CLIENT_USER_AGENT}
 DOWNLOAD_FOLDER = '/srv/dev-disk-by-label-media/downloads'
 
 
-def downloadJson(jsonUrl):
-    print('downloadJson(), jsonUrl: ', jsonUrl)
-    resp = requests.get(url = jsonUrl, headers = HEADERS)
+def download_json(json_url):
+    print('download_json(), jsonUrl: ', json_url)
+    resp = requests.get(url = json_url, headers = HEADERS)
     data = resp.json()
     menus = data['data']['menus']
 
-    videoItemList = []
+    video_item_list = []
     for item in menus:
         ms = 0
         sharelink = ''
@@ -48,12 +51,12 @@ def downloadJson(jsonUrl):
                 videoItem['sharelink'] = sharelink
                 videoItem['hi_video'] = hi_video
                 videoItem['lo_video'] = lo_video
-                videoItemList.append(videoItem)
-    return videoItemList
+                video_item_list.append(videoItem)
+    return video_item_list
 
 
-def getVideoUrl(videoItem):
-    urls = [videoItem['hi_video'], videoItem['lo_video']]
+def get_video_url(video_item):
+    urls = [video_item['hi_video'], video_item['lo_video']]
     for url in urls:
         print('head for url: ', url)
         r = requests.head(url, headers = HEADERS)
@@ -61,13 +64,6 @@ def getVideoUrl(videoItem):
         if r.status_code == 200:
             return url
     return None
-
-# def createDb():
-#     print('createDb()')
-#     conn = sqlite3.connect('ntv-videos.db')
-#     conn.execute('CREATE TABLE VIDEOS (id INT PRIMARY KEY NOT NULL), ms INT, title TEXT, sharelink TEXT, hi_video TEXT, lo_video TEXT')
-#     print('Table created successfully')
-#     conn.close()
 
 
 def download(url, file_name):
@@ -101,26 +97,67 @@ def notify_downloaded(file_name):
         print('ERROR in notify_downloaded: ', e)
 
 
+def store_downloaded(video_item):
+    print('store_downloaded(', video_item, ')')
+    with open(DOWNLOADED_TXT, 'a') as f:
+        json.dump(video_item, f)
+        print('', file=f)
+
+
+def read_downloaded():
+    print('read_downloaded()')
+
+    data_store = []
+    try:
+        with open(DOWNLOADED_TXT, 'r') as f:
+            line = 'value'
+            while line:
+                line = f.readline()
+                data_store.append(json.loads(line))
+    except Exception as e:
+        print('ERROR in read_downloaded: ', e)
+
+    return data_store
+
+def is_item_already_downloaded(video_item, data_store):
+    print('is_item_already_downloaded(', video_item, ')')
+    for item in data_store:
+        id_equals = item['id'] == video_item['id']
+        title_equals = item['title'] == video_item['title']
+        sharelink_equals = item['sharelink'] == video_item['sharelink']
+        if id_equals and title_equals and sharelink_equals:
+            print('is_item_already_downloaded() True')
+            return True
+    print('is_item_already_downloaded() False')
+    return False
+
+
 if __name__ == '__main__':
     print('main')
-    #createDb()
 
-#    if download('http://packages.openmediavault.org/public/dists/arrakis-proposed/main/binary-amd64/Packages.gz', 'downloaded-packages.gz'):
-#        notify_downloaded('Packages.gz')
+    #if download('http://packages.openmediavault.org/public/dists/arrakis-proposed/main/binary-amd64/Packages.gz', 'downloaded-packages.gz'):
+    #   store_downloaded('value1')
+    #   notify_downloaded('Packages.gz')
 
     urls = [NTV_EDA_JIVAYA_I_MERTVAYA_JSON_URL, NTV_PEREDELKA_JSON_URL,
             NTV_DACHA_OTVET_JSON_URL, NTV_CHUDO_TEHNILI_URL]
 
+    downloaded_video_item_list = read_downloaded()
+    print('downloaded_video_item_list: ', downloaded_video_item_list)
+
     for url in urls:
         print('url: ', url)
-        videoItemList = downloadJson(url)
-        #videoItemList.sort(key = attrgetter('ms'), reverse = False)
-        videoItem = videoItemList[0]
-        print('To download:', videoItem)
-        url = getVideoUrl(videoItem)
-        file_name = videoItem['title'] + '.mp4'
-        if download(url, file_name):
-            print('Downloaded SUCCESS')
-            notify_downloaded(file_name)
-        else:
-            print('Downloaded FAIL')
+        video_item_list = download_json(url)
+        #video_item_list.sort(key = attrgetter('ms'), reverse = False)
+        video_item = video_item_list[0]
+        if not is_item_already_downloaded(video_item, downloaded_video_item_list):
+            print('To download:', video_item)
+            url = get_video_url(video_item)
+            file_name = video_item['title'] + '.mp4'
+
+            if download(url, file_name):
+                print('Downloaded SUCCESS')
+                store_downloaded(video_item)
+                notify_downloaded(file_name)
+            else:
+                print('Downloaded FAIL')
