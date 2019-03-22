@@ -3,6 +3,7 @@ import requests
 import subprocess
 import json
 import time
+import os
 from datetime import datetime
 from subprocess import CalledProcessError
 
@@ -97,10 +98,14 @@ def download(url, file_name):
 
 def notify_downloaded(file_name):
     print('  notify_downloaded(', file_name, ')')
-    try:
-        subprocess.run(['python3', '/opt/nas-scripts/notifier.py', 'Aria2 downloaded: ' + file_name, '-c' '#nas-transmission'])
-    except Exception as e:
-        print('    ERROR in notify_downloaded: ', e)
+    notifier_script = '/opt/nas-scripts/notifier.py'
+    if os.path.isfile('/path/to/file'):
+        try:
+            subprocess.run(['python3', notifier_script, 'Aria2 downloaded: ' + file_name, '-c' '#nas-transmission'])
+        except Exception as e:
+            print('    ERROR in notify_downloaded: ', e)
+    else:
+        print('    ERROR notify script is not exists')
 
 
 def store_downloaded(video_item):
@@ -172,9 +177,10 @@ def process_urls():
 if __name__ == '__main__':
     print('main(), time:', get_time_stamp())
 
-    #if download('http://packages.openmediavault.org/public/dists/arrakis-proposed/main/binary-amd64/Packages.gz', 'downloaded-packages.gz'):
-    #   store_downloaded('value1')
-    #   notify_downloaded('Packages.gz')
+    # if download('http://packages.openmediavault.org/public/dists/arrakis-proposed/main/binary-amd64/Packages.gz', 'downloaded-packages.gz'):
+    #    store_downloaded('value1')
+    #    notify_downloaded('Packages.gz')
+
 
     downloaded_video_item_list = read_downloaded()
     print('downloaded_video_item_list: ', downloaded_video_item_list)
