@@ -2,15 +2,18 @@
 import requests
 import subprocess
 import json
+import time
 from datetime import datetime
-from operator import attrgetter
-from subprocess import check_output, CalledProcessError, STDOUT
+from subprocess import CalledProcessError
 
 
 NTV_EDA_JIVAYA_I_MERTVAYA_JSON_URL = 'http://www.ntv.ru/m/v10/prog/Eda_jivaya_i_mertvaya/'
 NTV_PEREDELKA_JSON_URL = 'http://www.ntv.ru/m/v10/prog/peredelka/'
 NTV_DACHA_OTVET_JSON_URL = 'http://www.ntv.ru/m/v10/prog/dacha_otvet/'
-NTV_CHUDO_TEHNILI_URL = 'http://www.ntv.ru/m/v10/prog/chudo_tehniki/'
+NTV_CHUDO_TEHNIKI_JSON_URL = 'http://www.ntv.ru/m/v10/prog/chudo_tehniki/'
+NTV_URLS = [NTV_EDA_JIVAYA_I_MERTVAYA_JSON_URL, NTV_PEREDELKA_JSON_URL,
+            NTV_DACHA_OTVET_JSON_URL, NTV_CHUDO_TEHNIKI_JSON_URL]
+
 DOWNLOADED_TXT = 'downloaded.txt'
 
 
@@ -109,7 +112,6 @@ def store_downloaded(video_item):
 
 def read_downloaded():
     print('read_downloaded()')
-
     data_store = []
     try:
         with open(DOWNLOADED_TXT, 'r') as f:
@@ -119,8 +121,8 @@ def read_downloaded():
                 data_store.append(json.loads(line))
     except Exception as e:
         print('  ERROR in read_downloaded: ', e)
-
     return data_store
+
 
 def is_item_already_downloaded(video_item, data_store):
     print('  is_item_already_downloaded(', video_item, ')')
@@ -135,30 +137,54 @@ def is_item_already_downloaded(video_item, data_store):
     return False
 
 
+def format_time(time):
+    return datetime.fromtimestamp(time).strftime('%Y-%m-%d %H:%M:%S')
+
+
+def format_time_simple(time):
+    return datetime.fromtimestamp(time).strftime('%Y-%m-%d %H:%M')
+
+
+def get_time_stamp():
+    ts = time.time()
+    return format_time(ts)
+
+
+def process_urls():
+    print('process_urls(), time: ', get_time_stamp())
+    for url in NTV_URLS:
+        video_item_list = download_json(url)
+        # video_item_list.sort(key = attrgetter('ms'), reverse = False)
+        video_item = video_item_list[0]
+        if not is_item_already_downloaded(video_item, downloaded_video_item_list):
+            url = get_video_url(video_item)
+            file_name = video_item['title'] + ' (' + format_time_simple(video_item['ms']/1000.0) + ').mp4'
+
+            if download(url, file_name):
+                print('  process_urls(), downloaded SUCCESS')
+                store_downloaded(video_item)
+                notify_downloaded(file_name)
+                return True
+            else:
+                print('  process_urls(), downloaded FAIL')
+    return False
+
 if __name__ == '__main__':
-    print('main')
+    print('main(), time:', get_time_stamp())
 
     #if download('http://packages.openmediavault.org/public/dists/arrakis-proposed/main/binary-amd64/Packages.gz', 'downloaded-packages.gz'):
     #   store_downloaded('value1')
     #   notify_downloaded('Packages.gz')
 
-    urls = [NTV_EDA_JIVAYA_I_MERTVAYA_JSON_URL, NTV_PEREDELKA_JSON_URL,
-            NTV_DACHA_OTVET_JSON_URL, NTV_CHUDO_TEHNILI_URL]
-
     downloaded_video_item_list = read_downloaded()
     print('downloaded_video_item_list: ', downloaded_video_item_list)
 
-    for url in urls:
-        video_item_list = download_json(url)
-        #video_item_list.sort(key = attrgetter('ms'), reverse = False)
-        video_item = video_item_list[0]
-        if not is_item_already_downloaded(video_item, downloaded_video_item_list):
-            url = get_video_url(video_item)
-            file_name = video_item['title'] + '.mp4'
+    for x in range(15):
+        print('main(): #', x)
+        if process_urls():
+            break
+        print('main(), sleep')
+        time.sleep(60)
 
-            if download(url, file_name):
-                print('  downloaded SUCCESS')
-                store_downloaded(video_item)
-                notify_downloaded(file_name)
-            else:
-                print('  downloaded FAIL')
+    print('main(), done, time:', get_time_stamp())
+
