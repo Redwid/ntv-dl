@@ -15,7 +15,7 @@ NTV_CHUDO_TEHNIKI_JSON_URL = 'http://www.ntv.ru/m/v10/prog/chudo_tehniki/'
 NTV_URLS = [NTV_EDA_JIVAYA_I_MERTVAYA_JSON_URL, NTV_PEREDELKA_JSON_URL,
             NTV_DACHA_OTVET_JSON_URL, NTV_CHUDO_TEHNIKI_JSON_URL]
 
-DOWNLOADED_TXT = 'downloaded.txt'
+DOWNLOADED_TXT = '/opt/ntv-dl/downloaded.txt'
 
 
 NTV_CLIENT_USER_AGENT = 'ru.ntv.client_v4.9'
