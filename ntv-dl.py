@@ -147,7 +147,7 @@ def format_time(time):
 
 
 def format_time_simple(time):
-    return datetime.fromtimestamp(time).strftime('%Y-%m-%d %H:%M')
+    return datetime.fromtimestamp(time).strftime('%Y-%m-%d %H.%M')
 
 
 def get_time_stamp():
