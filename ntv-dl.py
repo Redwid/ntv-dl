@@ -99,7 +99,7 @@ def download(url, file_name):
 def notify_downloaded(file_name):
     print('  notify_downloaded(', file_name, ')')
     notifier_script = '/opt/nas-scripts/notifier.py'
-    if os.path.isfile('/path/to/file'):
+    if os.path.isfile(notifier_script):
         try:
             subprocess.run(['python3', notifier_script, 'Aria2 downloaded: ' + file_name, '-c' '#nas-transmission'])
         except Exception as e:
