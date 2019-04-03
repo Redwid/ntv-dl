@@ -4,6 +4,7 @@ import subprocess
 import json
 import time
 import os
+# from slugify import slugify
 from datetime import datetime
 from subprocess import CalledProcessError
 
@@ -79,6 +80,7 @@ def download(url, file_name):
         #subprocess.run(['wget', '-P', DOWNLOD_FOLDER, '-N', '-U', NTV_CLIENT_USER_AGENT, '-O', videoItem['title'] + '.mp4', url])
         #subprocess.run(['wget', '-P', DOWNLOD_FOLDER, '-N', '-U', NTV_CLIENT_USER_AGENT, url])
         command = ['aria2c',
+                   '--enable-rpc',
                    '--auto-file-renaming=false',
                    '--user-agent=' + NTV_CLIENT_USER_AGENT,
                    '--file-allocation=none',
@@ -164,6 +166,7 @@ def process_urls():
         if not is_item_already_downloaded(video_item, downloaded_video_item_list):
             url = get_video_url(video_item)
             file_name = video_item['title'] + ' (' + format_time_simple(video_item['ms']/1000.0) + ').mp4'
+            #file_name = slugify(file_name)
 
             if download(url, file_name):
                 print('  process_urls(), downloaded SUCCESS')
