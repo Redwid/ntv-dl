@@ -4,6 +4,7 @@ import subprocess
 import json
 import time
 import os
+import aria2p
 # from slugify import slugify
 from datetime import datetime
 from subprocess import CalledProcessError
@@ -98,6 +99,37 @@ def download(url, file_name):
     return False
 
 
+def downloadByRpc(url, file_name):
+    print('  downloadByRpc(', url, ',', file_name, ')')
+    if url is not None:
+        aria2 = aria2p.API(
+            aria2p.Client(
+                host="http://localhost",
+                port=6800,
+                secret=""
+            )
+        )
+        try:
+            options = {}
+            options['auto-file-renaming'] = 'false'
+            options['user-agent'] = NTV_CLIENT_USER_AGENT
+            options['out'] = file_name
+
+            file = aria2.add_uris([url], options)
+            while file.is_active and not file.is_complete and not file.has_failed:
+                file = aria2.get_download(file.gid)
+                print('    downloadByRpc', 'is_active:', file.is_active, ', is_complete:', file.is_complete, ',has_failed:', file.has_failed)
+                time.sleep(5)
+
+            if file.is_complete and not file.has_failed:
+                print('    downloadByRpc(), file: ', file)
+                return True
+        except CalledProcessError as e:
+            output = e.output.decode()
+            print('    ERROR in command: ', output)
+    return False
+
+
 def notify_downloaded(file_name):
     print('  notify_downloaded(', file_name, ')')
     notifier_script = '/opt/nas-scripts/notifier.py'
@@ -168,7 +200,7 @@ def process_urls():
             file_name = video_item['title'] + ' (' + format_time_simple(video_item['ms']/1000.0) + ').mp4'
             #file_name = slugify(file_name)
 
-            if download(url, file_name):
+            if downloadByRpc(url, file_name):
                 print('  process_urls(), downloaded SUCCESS')
                 store_downloaded(video_item)
                 notify_downloaded(file_name)
@@ -180,7 +212,7 @@ def process_urls():
 if __name__ == '__main__':
     print('main(), time:', get_time_stamp())
 
-    # if download('http://packages.openmediavault.org/public/dists/arrakis-proposed/main/binary-amd64/Packages.gz', 'downloaded-packages.gz'):
+    # if downloadByRpc('http://packages.openmediavault.org/public/dists/arrakis-proposed/main/binary-amd64/Packages.gz', 'downloaded-packages.gz'):
     #    store_downloaded('value1')
     #    notify_downloaded('Packages.gz')
 

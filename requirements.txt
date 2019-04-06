@@ -1,2 +1,2 @@
 requests==2.21.0
-python==slugify-3.0.0
+aria2p==0.2.2
