@@ -1,2 +1,2 @@
 requests==2.21.0
-aria2p==0.2.2
+pyaria2==0.1.1

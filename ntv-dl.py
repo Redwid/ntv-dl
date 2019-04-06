@@ -4,7 +4,7 @@ import subprocess
 import json
 import time
 import os
-import aria2p
+from pyaria2 import Aria2RPC
 # from slugify import slugify
 from datetime import datetime
 from subprocess import CalledProcessError
@@ -102,27 +102,22 @@ def download(url, file_name):
 def downloadByRpc(url, file_name):
     print('  downloadByRpc(', url, ',', file_name, ')')
     if url is not None:
-        aria2 = aria2p.API(
-            aria2p.Client(
-                host="http://localhost",
-                port=6800,
-                secret=""
-            )
-        )
+        server = Aria2RPC()
         try:
             options = {}
             options['auto-file-renaming'] = 'false'
             options['user-agent'] = NTV_CLIENT_USER_AGENT
             options['out'] = file_name
 
-            file = aria2.add_uris([url], options)
-            while file.is_active and not file.is_complete and not file.has_failed:
-                file = aria2.get_download(file.gid)
-                print('    downloadByRpc', 'is_active:', file.is_active, ', is_complete:', file.is_complete, ',has_failed:', file.has_failed)
+            gid = server.addUri([url], options)
+            status = server.tellStatus(gid)
+            while status['status'] == 'active':
+                status = server.tellStatus(gid)
+                print('    downloadByRpc', 'status:', status)
                 time.sleep(5)
 
-            if file.is_complete and not file.has_failed:
-                print('    downloadByRpc(), file: ', file)
+            if status['status'] == 'complete':
+                print('    downloadByRpc(), file gid: ', status['gid'])
                 return True
         except CalledProcessError as e:
             output = e.output.decode()
