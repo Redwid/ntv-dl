@@ -111,9 +111,9 @@ def download(url, file_name):
     return False
 
 
-def downloadByRpc(url, file_name):
-    # print('  downloadByRpc(', url, ',', file_name, ')')
-    logger.info('downloadByRpc(%s, %s)', url, file_name)
+def download_by_rpc(url, file_name):
+    # print('  download_by_rpc(', url, ',', file_name, ')')
+    logger.info('download_by_rpc(%s, %s)', url, file_name)
     if url is not None:
         server = Aria2RPC()
         try:
@@ -126,17 +126,17 @@ def downloadByRpc(url, file_name):
             status = server.tellStatus(gid)
             while status['status'] == 'active':
                 status = server.tellStatus(gid)
-                # print('    downloadByRpc', 'status:', status)
-                logger.info('downloadByRpc(), status: %s', status)
+                # print('    download_by_rpc', 'status:', status)
+                logger.info('download_by_rpc(), status: %s', status)
                 time.sleep(5)
 
             if status['status'] == 'complete':
-                # print('    downloadByRpc(), file gid: ', status['gid'])
-                logger.info('downloadByRpc(), file gid: %s', status['gid'])
+                # print('    download_by_rpc(), file gid: ', status['gid'])
+                logger.info('download_by_rpc(), file gid: %s', status['gid'])
                 return True
         except Exception as e:
             # print('    ERROR in command: ', output)
-            logger.error('ERROR in downloadByRpc()', exc_info=True)
+            logger.error('ERROR in download_by_rpc()', exc_info=True)
     return False
 
 
@@ -218,9 +218,9 @@ def process_urls():
         if not is_item_already_downloaded(video_item, downloaded_video_item_list):
             url = get_video_url(video_item)
             file_name = video_item['title'] + ' (' + format_time_simple(video_item['ms']/1000.0) + ').mp4'
-            #file_name = slugify(file_name)
+            file_name = sanitize_for_file_system(file_name)
 
-            if downloadByRpc(url, file_name):
+            if download_by_rpc(url, file_name):
                 # print('  process_urls(), downloaded SUCCESS')
                 logger.info('process_urls() downloaded SUCCESS')
                 store_downloaded(video_item)
@@ -231,11 +231,24 @@ def process_urls():
                 logger.info('process_urls() downloaded FAIL')
     return False
 
+def sanitize_for_file_system(file_name):
+    logger.info('sanitize_for_file_system(), file_name: %s', file_name)
+    file_name = file_name.replace(":", "-")
+    file_name = file_name.replace("?", "")
+    file_name = file_name.replace("/", "-")
+    file_name = file_name.replace("\\", "-")
+    file_name = file_name.replace("&", " AND ")
+    file_name = file_name.replace("|", "-")
+    file_name = file_name.replace(">", "-")
+    file_name = file_name.replace("<", "-")
+    logger.info('sanitize_for_file_system(), new file_name: %s', file_name)
+    return file_name
+
 if __name__ == '__main__':
     # print('main(), time:', get_time_stamp())
     logger.info('main(), time: %s', get_time_stamp())
 
-    # if downloadByRpc('http://packages.openmediavault.org/public/dists/arrakis-proposed/main/binary-amd64/Packages.gz', 'downloaded-packages.gz'):
+    # if download_by_rpc('http://packages.openmediavault.org/public/dists/arrakis-proposed/main/binary-amd64/Packages.gz', 'downloaded-packages.gz'):
     #    store_downloaded('value1')
     #    notify_downloaded('Packages.gz')
 
