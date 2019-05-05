@@ -2,6 +2,7 @@
 import logging
 from logging.handlers import RotatingFileHandler
 
+
 def getNasLogger(name):
     formatString = '%(asctime)s: %(name)s: %(threadName)s - %(levelname)s - %(message)s'
 
@@ -13,8 +14,10 @@ def getNasLogger(name):
         formatter = logging.Formatter(formatString)
         handler.setFormatter(formatter)
         logger.addHandler(handler)
-    except PermissionError:
+    except PermissionError as e:
+        print('PermissionError in init logger', e)
         logger.error('PermissionError in init logger ', exc_info=True)
-    except FileNotFoundError:
+    except FileNotFoundError as e:
+        print('FileNotFoundError in init logger', e)
         logger.error('FileNotFoundError in init logger ', exc_info=True)
     return logger

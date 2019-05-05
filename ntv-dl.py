@@ -91,7 +91,7 @@ def download(url, file_name):
         #subprocess.run(['wget', '-P', DOWNLOD_FOLDER, '-N', '-U', NTV_CLIENT_USER_AGENT, '-O', videoItem['title'] + '.mp4', url])
         #subprocess.run(['wget', '-P', DOWNLOD_FOLDER, '-N', '-U', NTV_CLIENT_USER_AGENT, url])
         command = ['aria2c',
-                   '--enable-rpc',
+                   '--enable-rpc=true',
                    '--auto-file-renaming=false',
                    '--user-agent=' + NTV_CLIENT_USER_AGENT,
                    '--file-allocation=none',
