@@ -124,9 +124,9 @@ def download(url, file_name):
     return False
 
 
-def download_by_rpc(url, dir_path, file_name):
+def download_by_rpc(url, dir_program_path, file_name):
     # print('  download_by_rpc(', url, ',', file_name, ')')
-    logger.info('download_by_rpc(%s, %s, %s)', url, dir_path, file_name)
+    logger.info('download_by_rpc(%s, %s, %s)', url, dir_program_path, file_name)
 
     # if True:
     #     return
@@ -138,7 +138,7 @@ def download_by_rpc(url, dir_path, file_name):
             options['auto-file-renaming'] = 'false'
             options['user-agent'] = NTV_CLIENT_USER_AGENT
             # options['dir'] = dir_path
-            options['out'] = dir_path + '/' + file_name
+            options['out'] = dir_program_path + '/' + file_name
 
             gid = server.addUri([url], options)
             status = server.tellStatus(gid)
@@ -256,13 +256,14 @@ def process_urls():
             file_name_mp4 = file_name + '.mp4'
             file_name_nfo = file_name + '.nfo'
 
-            dir = DOWNLOAD_FOLDER + '/' + sanitize_for_file_system(video_item['program_title'])
-            os.makedirs(dir, exist_ok=True)
+            dir_program_path = sanitize_for_file_system(video_item['program_title'])
+            dir_full_path = DOWNLOAD_FOLDER + '/' + dir_program_path
+            os.makedirs(dir_full_path, exist_ok=True)
 
-            if download_by_rpc(url, dir, file_name_mp4):
+            if download_by_rpc(url, dir_program_path, file_name_mp4):
                 # print('  process_urls(), downloaded SUCCESS')
                 logger.info('process_urls() downloaded SUCCESS')
-                store_nfo_file(video_item, dir, file_name_nfo)
+                store_nfo_file(video_item, dir_full_path, file_name_nfo)
                 store_downloaded(video_item)
                 notify_downloaded(file_name)
                 return True
