@@ -265,7 +265,7 @@ def process_urls():
                 logger.info('process_urls() downloaded SUCCESS')
                 store_nfo_file(video_item, dir_full_path, file_name_nfo)
                 store_downloaded(video_item)
-                notify_downloaded(file_name)
+                notify_downloaded(dir_program_path + '/' + file_name)
                 return True
             else:
                 # print('  process_urls(), downloaded FAIL')
