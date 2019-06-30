@@ -44,7 +44,6 @@ def download_json(json_url):
         lo_video = ''
         text = ''
         preview = ''
-        episod_id = ''
         program_title = ''
         if 'issues' in item['data']:
             issues = item['data']['issues']
@@ -62,7 +61,6 @@ def download_json(json_url):
                         hi_video = video['hi_video']
                         lo_video = video['video']
                         preview = video['preview']
-                        episod_id = video['eid']
                 videoItem = {}
                 videoItem['id'] = id
                 videoItem['ms'] = ms
@@ -72,7 +70,6 @@ def download_json(json_url):
                 videoItem['lo_video'] = lo_video
                 videoItem['text'] = sanitize_after_xml(text)
                 videoItem['preview'] = preview
-                videoItem['episod_id'] = episod_id
                 videoItem['program_title'] = program_title
                 video_item_list.append(videoItem)
     return video_item_list
@@ -182,7 +179,6 @@ def store_nfo_file(video_item, dir_path, file_name_nfo):
         f.write('    <showtitle>' + escape(video_item['program_title']) + '</showtitle>\n')
         f.write('    <plot>' + escape(video_item['text']) + '</plot>\n')
         f.write('    <season>1</season>\n')
-        f.write('    <episode>' + str(video_item['episod_id']) + '</episode>\n')
         f.write('    <thumb aspect="banner">' + escape(video_item['preview']) + '</thumb>\n')
         f.write('    <aired>' + format_time_simple(video_item['ms']/1000.0) + '</aired>\n')
         f.write('</episodedetails>\n')
