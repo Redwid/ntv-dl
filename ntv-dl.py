@@ -137,8 +137,8 @@ def download_by_rpc(url, dir_path, file_name):
             options = {}
             options['auto-file-renaming'] = 'false'
             options['user-agent'] = NTV_CLIENT_USER_AGENT
-            options['dir'] = dir_path
-            options['out'] = file_name
+            # options['dir'] = dir_path
+            options['out'] = dir_path + '/' + file_name
 
             gid = server.addUri([url], options)
             status = server.tellStatus(gid)
