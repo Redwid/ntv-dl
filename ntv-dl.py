@@ -9,6 +9,7 @@ from pyaria2 import Aria2RPC
 from datetime import datetime
 from subprocess import CalledProcessError
 from logger import getNasLogger
+from xml.sax.saxutils import escape
 
 
 NTV_EDA_JIVAYA_I_MERTVAYA_JSON_URL = 'http://www.ntv.ru/m/v10/prog/Eda_jivaya_i_mertvaya/'
@@ -41,11 +42,17 @@ def download_json(json_url):
         sharelink = ''
         hi_video = ''
         lo_video = ''
+        text = ''
+        preview = ''
+        episod_id = ''
+        program_title = ''
         if 'issues' in item['data']:
             issues = item['data']['issues']
             for issue in issues:
                 id = issue['id']
                 title = issue['title']
+                text = issue['txt']
+                program_title = issue['program_title']
                 if 'video_list' in issue:
                     video_list = issue['video_list']
                     for video in video_list:
@@ -54,13 +61,19 @@ def download_json(json_url):
                         sharelink = video['sharelink']
                         hi_video = video['hi_video']
                         lo_video = video['video']
+                        preview = video['preview']
+                        episod_id = video['eid']
                 videoItem = {}
                 videoItem['id'] = id
                 videoItem['ms'] = ms
-                videoItem['title'] = title
+                videoItem['title'] = sanitize_after_xml(title)
                 videoItem['sharelink'] = sharelink
                 videoItem['hi_video'] = hi_video
                 videoItem['lo_video'] = lo_video
+                videoItem['text'] = sanitize_after_xml(text)
+                videoItem['preview'] = preview
+                videoItem['episod_id'] = episod_id
+                videoItem['program_title'] = program_title
                 video_item_list.append(videoItem)
     return video_item_list
 
@@ -111,15 +124,20 @@ def download(url, file_name):
     return False
 
 
-def download_by_rpc(url, file_name):
+def download_by_rpc(url, dir_path, file_name):
     # print('  download_by_rpc(', url, ',', file_name, ')')
-    logger.info('download_by_rpc(%s, %s)', url, file_name)
+    logger.info('download_by_rpc(%s, %s, %s)', url, dir_path, file_name)
+
+    # if True:
+    #     return
+
     if url is not None:
         server = Aria2RPC()
         try:
             options = {}
             options['auto-file-renaming'] = 'false'
             options['user-agent'] = NTV_CLIENT_USER_AGENT
+            options['dir'] = dir_path
             options['out'] = file_name
 
             gid = server.addUri([url], options)
@@ -153,6 +171,22 @@ def notify_downloaded(file_name):
     else:
         # print('    ERROR notify script is not exists')
         logger.error('ERROR notify script is not exists')
+
+
+def store_nfo_file(video_item, dir_path, file_name_nfo):
+    logger.info('store_nfo_file(%s, %s, %s)', video_item, dir_path, file_name_nfo)
+    with open(dir_path + '/' + file_name_nfo, 'w') as f:
+        f.write('<?xml version="1.0" encoding="utf-8"?>\n')
+        f.write('<episodedetails>\n')
+        f.write('    <title>' + escape(video_item['title']) + '</title>\n')
+        f.write('    <showtitle>' + escape(video_item['program_title']) + '</showtitle>\n')
+        f.write('    <plot>' + escape(video_item['text']) + '</plot>\n')
+        f.write('    <season>1</season>\n')
+        f.write('    <episode>' + str(video_item['episod_id']) + '</episode>\n')
+        f.write('    <thumb aspect="banner">' + escape(video_item['preview']) + '</thumb>\n')
+        f.write('    <aired>' + format_time_simple(video_item['ms']/1000.0) + '</aired>\n')
+        f.write('</episodedetails>\n')
+    return
 
 
 def store_downloaded(video_item):
@@ -217,12 +251,18 @@ def process_urls():
         video_item = video_item_list[0]
         if not is_item_already_downloaded(video_item, downloaded_video_item_list):
             url = get_video_url(video_item)
-            file_name = video_item['title'] + ' (' + format_time_simple(video_item['ms']/1000.0) + ').mp4'
+            file_name = video_item['title'] + ' (' + format_time_simple(video_item['ms']/1000.0) + ')'
             file_name = sanitize_for_file_system(file_name)
+            file_name_mp4 = file_name + '.mp4'
+            file_name_nfo = file_name + '.nfo'
 
-            if download_by_rpc(url, file_name):
+            dir = DOWNLOAD_FOLDER + '/' + sanitize_for_file_system(video_item['program_title'])
+            os.makedirs(dir, exist_ok=True)
+
+            if download_by_rpc(url, dir, file_name_mp4):
                 # print('  process_urls(), downloaded SUCCESS')
                 logger.info('process_urls() downloaded SUCCESS')
+                store_nfo_file(video_item, dir, file_name_nfo)
                 store_downloaded(video_item)
                 notify_downloaded(file_name)
                 return True
@@ -243,6 +283,14 @@ def sanitize_for_file_system(file_name):
     file_name = file_name.replace("<", "-")
     logger.info('sanitize_for_file_system(), new file_name: %s', file_name)
     return file_name
+
+
+def sanitize_after_xml(text):
+    text = text.replace("\n", "")
+    text = text.replace("   ", " ")
+    text = text.replace("  ", " ")
+    return text
+
 
 if __name__ == '__main__':
     # print('main(), time:', get_time_stamp())
