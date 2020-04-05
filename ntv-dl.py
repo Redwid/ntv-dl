@@ -4,12 +4,21 @@ import subprocess
 import json
 import time
 import os
+import argparse
 from pyaria2 import Aria2RPC
 # from slugify import slugify
 from datetime import datetime
 from subprocess import CalledProcessError
 from logger import getNasLogger
 from xml.sax.saxutils import escape
+
+import pyodbc
+import sqlalchemy as sal
+from sqlalchemy import create_engine
+from sqlalchemy import Table, Column, Integer, String, MetaData, Time, Text
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy import or_
 
 
 NTV_EDA_JIVAYA_I_MERTVAYA_JSON_URL = 'http://www.ntv.ru/m/v10/prog/Eda_jivaya_i_mertvaya/'
@@ -24,9 +33,24 @@ DOWNLOADED_TXT = '/opt/ntv-dl/downloaded.txt'
 
 NTV_CLIENT_USER_AGENT = 'ru.ntv.client_v4.9'
 HEADERS = {'User-Agent': NTV_CLIENT_USER_AGENT}
-DOWNLOAD_FOLDER = '/srv/dev-disk-by-label-media/downloads'
+DOWNLOAD_FOLDER = '/srv/dev-disk-by-label-media/data/downloads'
 
 logger = getNasLogger('ntv-dl')
+
+Base = declarative_base()
+
+class Downloaded(Base):
+    __tablename__ = 'downloaded'
+    id = Column('id', Integer, index = True, primary_key = True, autoincrement = True)
+    downloaded_id = Column('downloaded_id', Text)
+    title = Column('title', Text)
+    lo_video = Column('lo_video', Text)
+    hi_video = Column('hi_video', Text)
+    program_title = Column('program_title', Text)
+    text = Column('text', Text)
+    preview = Column('preview', Text)
+    sharelink = Column('sharelink', Text)
+    time = Column('time', Time)
 
 
 def download_json(json_url):
@@ -185,12 +209,40 @@ def store_nfo_file(video_item, dir_path, file_name_nfo):
     return
 
 
-def store_downloaded(video_item):
+def store_downloaded(video_item, session):
+    try:
+        store_downloaded_to_db(video_item, session)
+    except Exception as e:
+        # print('  ERROR in read_downloaded: ', e)
+        logger.error('ERROR in store_downloaded to db failed saving to file', exc_info=True)
+        store_downloaded_to_file(video_item)
+
+
+def store_downloaded_to_file(video_item):
     # print('  store_downloaded(', video_item, ')')
     logger.info('store_downloaded(%s)', video_item)
     with open(DOWNLOADED_TXT, 'a') as f:
         json.dump(video_item, f)
         print('', file=f)
+
+def store_downloaded_to_db(video_item, session):
+    # print('  store_downloaded(', video_item, ')')
+    logger.info('store_downloaded(%s)', video_item)
+
+    try:
+        downloaded = Downloaded(downloaded_id = get_value(video_item, 'id'),
+                                title = get_value(video_item, 'title'),
+                                lo_video = get_value(video_item, 'lo_video'),
+                                hi_video = get_value(video_item, 'hi_video'),
+                                program_title = get_value(video_item, 'program_title'),
+                                text = get_value(video_item, 'text'),
+                                preview = get_value(video_item, 'preview'),
+                                time = datetime.now())
+        session.add(downloaded)
+        session.commit()
+    except Exception as e:
+        # print('  ERROR in read_downloaded: ', e)
+        logger.error('ERROR in store_downloaded_to_db', exc_info=True)
 
 
 def read_downloaded():
@@ -225,6 +277,23 @@ def is_item_already_downloaded(video_item, data_store):
     return False
 
 
+def is_item_already_downloaded_in_db(video_item, session):
+    logger.info('is_item_already_downloaded_in_db(%s)', video_item)
+
+    # records = session.query(Downloaded).filter(Downloaded.downloaded_id == video_item['id']).all()
+
+    records = session.query(Downloaded).filter(or_(Downloaded.downloaded_id == video_item['id'],
+                                                   Downloaded.title == video_item['title'],
+                                                   Downloaded.sharelink == video_item['sharelink'])).all()
+
+    if len(records) != 0:
+        logger.info('is_item_already_downloaded_in_db(), records: %s', records[0])
+        return True
+
+    logger.info('is_item_already_downloaded_in_db(), False')
+    return False
+
+
 def format_time(time):
     return datetime.fromtimestamp(time).strftime('%Y-%m-%d %H:%M:%S')
 
@@ -238,14 +307,14 @@ def get_time_stamp():
     return format_time(ts)
 
 
-def process_urls():
+def process_urls(downloaded_list, session):
     # print('process_urls(), time: ', get_time_stamp())
     logger.info('process_urls() %s', get_time_stamp())
     for url in NTV_URLS:
         video_item_list = download_json(url)
         # video_item_list.sort(key = attrgetter('ms'), reverse = False)
         video_item = video_item_list[0]
-        if not is_item_already_downloaded(video_item, downloaded_video_item_list):
+        if not is_item_already_downloaded_in_db(video_item, session):
             url = get_video_url(video_item)
             file_name = video_item['title'] + ' (' + format_time_simple(video_item['ms']/1000.0) + ')'
             file_name = sanitize_for_file_system(file_name)
@@ -260,7 +329,7 @@ def process_urls():
                 # print('  process_urls(), downloaded SUCCESS')
                 logger.info('process_urls() downloaded SUCCESS')
                 store_nfo_file(video_item, dir_full_path, file_name_nfo)
-                store_downloaded(video_item)
+                store_downloaded(video_item, session)
                 notify_downloaded(dir_program_path + '/' + file_name)
                 return True
             else:
@@ -288,24 +357,83 @@ def sanitize_after_xml(text):
     text = text.replace("  ", " ")
     return text
 
+def get_value(item, key):
+    if key in item:
+        return item[key]
+
+    return ""
+
+#Convert DB to utf8mb4 format
+#https://mathiasbynens.be/notes/mysql-utf8mb4#utf8-to-utf8mb4
+#
+def get_db_session(db_user_name, db_user_password):
+    url = "mysql+mysqlconnector://{}:{}@192.168.1.64:3306/ntv".format(db_user_name, db_user_password)
+    engine = sal.create_engine(url, echo = True)
+    connection = engine.connect()
+    metadata = sal.MetaData()
+
+    Base.metadata.create_all(engine)
+
+    Session = sessionmaker(bind = engine)
+    Session.configure( bind = engine)
+    session = Session()
+    return session
+
+
+def migrate_to_db(db_user_name, db_user_password, data_store):
+    session = get_db_session(db_user_name, db_user_password)
+    try:
+        for item in data_store:
+            logger.info('migrate_to_db() item: %s', item)
+            downloaded = Downloaded(downloaded_id = get_value(item, 'id'),
+                                    title = get_value(item, 'title'),
+                                    lo_video = get_value(item, 'lo_video'),
+                                    hi_video = get_value(item, 'hi_video'),
+                                    program_title = get_value(item, 'program_title'),
+                                    text = get_value(item, 'text'),
+                                    preview = get_value(item, 'preview'),
+                                    sharelink = get_value(item, 'sharelink'),
+                                    time = datetime.now())
+            logger.info('migrate_to_db() downloaded: %s', downloaded)
+            try:
+                session.add(downloaded)
+            except Exception as e:
+                logger.error('ERROR in migrate_to_db', exc_info=True)
+    except Exception as e:
+        # print('  ERROR in read_downloaded: ', e)
+        logger.error('ERROR in migrate_to_db', exc_info=True)
+    session.commit()
+
+
 
 if __name__ == '__main__':
     # print('main(), time:', get_time_stamp())
     logger.info('main(), time: %s', get_time_stamp())
 
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-u", "--user", help="The db user name")
+    parser.add_argument("-p", "--password", help="The db user password")
+    args = parser.parse_args()
+
+    logger.info('main() db_user_name: %s, db_user_password: %s', args.user, args.password)
+
     # if download_by_rpc('http://packages.openmediavault.org/public/dists/arrakis-proposed/main/binary-amd64/Packages.gz', 'downloaded-packages.gz'):
     #    store_downloaded('value1')
     #    notify_downloaded('Packages.gz')
 
+    main_session = get_db_session(args.user, args.password)
 
-    downloaded_video_item_list = read_downloaded()
+    downloaded_video_item_list = []#read_downloaded()
+
+    # migrate_to_db(args.user, args.password, downloaded_video_item_list)
+
     # print('downloaded_video_item_list: ', downloaded_video_item_list)
     logger.info('downloaded_video_item_list: %s', downloaded_video_item_list)
 
     for x in range(15):
         # print('main(): #', x)
         logger.info('main(): #%d', x)
-        if process_urls():
+        if process_urls(downloaded_video_item_list, main_session):
             break
         # print('main(), sleep')
         logger.info('main(), sleep')
