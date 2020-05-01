@@ -433,8 +433,8 @@ if __name__ == '__main__':
     for x in range(36):# 3h = 60*3/5
         # print('main(): #', x)
         logger.info('main(): #%d', x)
-        if process_urls(downloaded_video_item_list, main_session):
-            break
+        process_urls(downloaded_video_item_list, main_session)
+
         # print('main(), sleep')
         logger.info('main(), sleep')
         time.sleep(60*5) #5 min
