@@ -430,11 +430,16 @@ if __name__ == '__main__':
     # print('downloaded_video_item_list: ', downloaded_video_item_list)
     logger.info('downloaded_video_item_list: %s', downloaded_video_item_list)
 
+    count = 0
     for x in range(36):# 3h = 60*3/5
         # print('main(): #', x)
         logger.info('main(): #%d', x)
-        process_urls(downloaded_video_item_list, main_session)
-
+        if process_urls(downloaded_video_item_list, main_session):
+            count = count + 1
+            logger.info('main(): #%d, count: %d', x, count)
+            if count >= 2:
+                logger.info('main(): #%d, break', x)
+                break
         # print('main(), sleep')
         logger.info('main(), sleep')
         time.sleep(60*5) #5 min
