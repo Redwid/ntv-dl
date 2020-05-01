@@ -430,14 +430,14 @@ if __name__ == '__main__':
     # print('downloaded_video_item_list: ', downloaded_video_item_list)
     logger.info('downloaded_video_item_list: %s', downloaded_video_item_list)
 
-    for x in range(15):
+    for x in range(36):# 3h = 60*3/5
         # print('main(): #', x)
         logger.info('main(): #%d', x)
         if process_urls(downloaded_video_item_list, main_session):
             break
         # print('main(), sleep')
         logger.info('main(), sleep')
-        time.sleep(60)
+        time.sleep(60*5) #5 min
 
     # print('main(), done, time:', get_time_stamp())
     logger.info('main(), done, time: %s', get_time_stamp())

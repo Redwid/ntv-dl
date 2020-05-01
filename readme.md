@@ -3,7 +3,8 @@
 ####Install pyobdc
 For MacOS:
 ``brew install unixodbc``
-For debian:
+
+For Debian:
 ``sudo apt install unixodbc-dev``
 
 ####Run app
