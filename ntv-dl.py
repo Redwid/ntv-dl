@@ -431,7 +431,7 @@ if __name__ == '__main__':
     logger.info('downloaded_video_item_list: %s', downloaded_video_item_list)
 
     count = 0
-    for x in range(36):# 3h = 60*3/5
+    for x in range(40):
         # print('main(): #', x)
         logger.info('main(): #%d', x)
         if process_urls(downloaded_video_item_list, main_session):
