@@ -367,7 +367,7 @@ def get_value(item, key):
 #https://mathiasbynens.be/notes/mysql-utf8mb4#utf8-to-utf8mb4
 #
 def get_db_session(db_user_name, db_user_password):
-    url = "mysql+mysqlconnector://{}:{}@192.168.1.64:3306/ntv".format(db_user_name, db_user_password)
+    url = "mysql+mysqlconnector://{}:{}@192.168.1.29:3306/ntv".format(db_user_name, db_user_password)
     engine = sal.create_engine(url, echo = True)
     connection = engine.connect()
     metadata = sal.MetaData()

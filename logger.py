@@ -1,5 +1,6 @@
 #!/usr/bin/env python -*- coding: utf-8 -*-
 import logging
+import os
 from logging.handlers import RotatingFileHandler
 
 
@@ -10,7 +11,10 @@ def getNasLogger(name):
                         format=formatString)
     logger = logging.getLogger(name)
     try:
-        handler = RotatingFileHandler('/var/log/nas-scripts/{}.log'.format(name), maxBytes=1048576, backupCount=3)
+        path = '{}.log'
+        if os.path.isfile('/var/log/nas-scripts/'):
+            path = '/var/log/nas-scripts/{}.log'
+        handler = RotatingFileHandler(path.format(name), maxBytes=1048576, backupCount=3)
         formatter = logging.Formatter(formatString)
         handler.setFormatter(formatter)
         logger.addHandler(handler)
