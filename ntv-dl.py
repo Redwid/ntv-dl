@@ -52,6 +52,9 @@ class Downloaded(Base):
     sharelink = Column('sharelink', Text)
     time = Column('time', Time)
 
+    def __str__(self):
+        return "Download[id:{}, downloaded_id:{}, title:{}, sharelink: {}, time: {}".format(self.id, self.downloaded_id, self.title, self.sharelink, self.time)
+
 
 def download_json(json_url):
     # print('download_json(), jsonUrl: ', json_url)
@@ -280,14 +283,24 @@ def is_item_already_downloaded(video_item, data_store):
 def is_item_already_downloaded_in_db(video_item, session):
     logger.info('is_item_already_downloaded_in_db(%s)', video_item)
 
-    # records = session.query(Downloaded).filter(Downloaded.downloaded_id == video_item['id']).all()
+    #records = session.query(Downloaded).filter(or_(Downloaded.downloaded_id == video_item['id'],
+    #                                               Downloaded.title == video_item['title'],
+    #                                               Downloaded.sharelink == video_item['sharelink'])).all()
 
-    records = session.query(Downloaded).filter(or_(Downloaded.downloaded_id == video_item['id'],
-                                                   Downloaded.title == video_item['title'],
-                                                   Downloaded.sharelink == video_item['sharelink'])).all()
+    records_by_id = session.query(Downloaded).filter(Downloaded.downloaded_id == video_item['id']).all()
 
-    if len(records) != 0:
-        logger.info('is_item_already_downloaded_in_db(), records: %s', records[0])
+    records_by_title = session.query(Downloaded).filter(Downloaded.title == video_item['title']).all()
+
+    records_by_sharelink = session.query(Downloaded).filter(Downloaded.sharelink == video_item['sharelink']).all()
+
+    if len(records_by_id) != 0:
+        logger.info('is_item_already_downloaded_in_db(), records_by_id: %s', records_by_id[0])
+        return True
+    if len(records_by_title) != 0:
+        logger.info('is_item_already_downloaded_in_db(), records_by_title: %s', records_by_title[0])
+        return True
+    if len(records_by_sharelink) != 0:
+        logger.info('is_item_already_downloaded_in_db(), records_by_sharelink: %s', records_by_sharelink[0])
         return True
 
     logger.info('is_item_already_downloaded_in_db(), False')
