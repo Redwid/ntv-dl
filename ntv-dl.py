@@ -185,10 +185,10 @@ def download_by_rpc(url, dir_program_path, file_name):
 def notify_downloaded(file_name):
     # print('  notify_downloaded(', file_name, ')')
     logger.info('notify_downloaded(%s)', file_name)
-    notifier_script = '/opt/nas-scripts/notifier.py'
+    notifier_script = '/opt/nas-scripts/notify/aria_done_notify.sh'
     if os.path.isfile(notifier_script):
         try:
-            subprocess.run(['python3', notifier_script, 'Aria2 downloaded: ' + file_name, '-c' '#nas-transmission'])
+            subprocess.run([notifier_script, file_name])
         except Exception as e:
             # print('    ERROR in notify_downloaded: ', e)
             logger.error('ERROR in notify_downloaded', exc_info=True)
