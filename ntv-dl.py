@@ -33,7 +33,7 @@ DOWNLOADED_TXT = '/opt/ntv-dl/downloaded.txt'
 
 NTV_CLIENT_USER_AGENT = 'ru.ntv.client_v4.9'
 HEADERS = {'User-Agent': NTV_CLIENT_USER_AGENT}
-DOWNLOAD_FOLDER = '/srv/dev-disk-by-label-media/data/downloads'
+DOWNLOAD_FOLDER = '/mnt/media/data/downloads'
 
 logger = getNasLogger('ntv-dl')
 
