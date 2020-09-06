@@ -15,10 +15,11 @@ from xml.sax.saxutils import escape
 import pyodbc
 import sqlalchemy as sal
 from sqlalchemy import create_engine
-from sqlalchemy import Table, Column, Integer, String, MetaData, Time, Text
+from sqlalchemy import Table, Column, Integer, String, MetaData, DateTime, Text
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import or_
+from sqlalchemy.sql import func
 
 
 NTV_EDA_JIVAYA_I_MERTVAYA_JSON_URL = 'http://www.ntv.ru/m/v10/prog/Eda_jivaya_i_mertvaya/'
@@ -50,7 +51,7 @@ class Downloaded(Base):
     text = Column('text', Text)
     preview = Column('preview', Text)
     sharelink = Column('sharelink', Text)
-    time = Column('time', Time)
+    time = Column('time', DateTime)
 
     def __str__(self):
         return "Download[id:{}, downloaded_id:{}, title:{}, sharelink: {}, time: {}".format(self.id, self.downloaded_id, self.title, self.sharelink, self.time)
@@ -240,7 +241,7 @@ def store_downloaded_to_db(video_item, session):
                                 program_title = get_value(video_item, 'program_title'),
                                 text = get_value(video_item, 'text'),
                                 preview = get_value(video_item, 'preview'),
-                                time = datetime.now())
+                                time = time.strftime('%Y-%m-%d %H:%M:%S'))
         session.add(downloaded)
         session.commit()
     except Exception as e:
@@ -289,16 +290,16 @@ def is_item_already_downloaded_in_db(video_item, session):
 
     records_by_id = session.query(Downloaded).filter(Downloaded.downloaded_id == video_item['id']).all()
 
-    records_by_title = session.query(Downloaded).filter(Downloaded.title == video_item['title']).all()
-
-    records_by_sharelink = session.query(Downloaded).filter(Downloaded.sharelink == video_item['sharelink']).all()
-
     if len(records_by_id) != 0:
         logger.info('is_item_already_downloaded_in_db(), records_by_id: %s', records_by_id[0])
         return True
+
+    records_by_title = session.query(Downloaded).filter(Downloaded.title == video_item['title']).all()
     if len(records_by_title) != 0:
         logger.info('is_item_already_downloaded_in_db(), records_by_title: %s', records_by_title[0])
         return True
+
+    records_by_sharelink = session.query(Downloaded).filter(Downloaded.sharelink == video_item['sharelink']).all()
     if len(records_by_sharelink) != 0:
         logger.info('is_item_already_downloaded_in_db(), records_by_sharelink: %s', records_by_sharelink[0])
         return True
