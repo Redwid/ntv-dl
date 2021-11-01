@@ -200,7 +200,7 @@ def notify_downloaded(file_name):
 
 def store_nfo_file(video_item, dir_path, file_name_nfo):
     logger.info('store_nfo_file(%s, %s, %s)', video_item, dir_path, file_name_nfo)
-    with open(dir_path + '/' + file_name_nfo, 'w') as f:
+    with open(dir_path + '/' + file_name_nfo, 'w+') as f:
         f.write('<?xml version="1.0" encoding="utf-8"?>\n')
         f.write('<episodedetails>\n')
         f.write('    <title>' + escape(video_item['title']) + '</title>\n')
