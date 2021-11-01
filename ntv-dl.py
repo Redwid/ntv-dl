@@ -361,6 +361,8 @@ def sanitize_for_file_system(file_name):
     file_name = file_name.replace("|", "-")
     file_name = file_name.replace(">", "-")
     file_name = file_name.replace("<", "-")
+    file_name = file_name.replace("«", "'")
+    file_name = file_name.replace("»", "'")
     logger.info('sanitize_for_file_system(), new file_name: %s', file_name)
     return file_name
 
